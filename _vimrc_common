@@ -1,0 +1,67 @@
+"Let section.
+let mapleader = ","
+
+nnoremap <leader>vee :tabe ~/vimrc/_vimrc_common<cr> 
+nnoremap <leader>vs :so ~/vimrc/_vimrc_common<cr>
+
+"Set Section.
+
+set ai ruler incsearch hlsearch number showcmd timeoutlen=2000 tabstop=4 shiftwidth=4 softtabstop=4 smarttab expandtab relativenumber complete=.,w,b,u,t,i,kspell mouse=a mps=(:),{:},[:],<:> diffexpr=MyDiff() backspace=2 nobackup
+
+
+"Map section.
+
+"This section makes it so that typing an opening character automatically types a closing character.
+"In case needed, original functionality is restored by prepending the mapleader.
+"{
+inoremap ( () <esc>hi
+inoremap <leader>( (
+inoremap ' '' <esc>hi
+inoremap <leader>' '
+inoremap " "" <esc>hi
+inoremap <leader>" "
+inoremap [ [] <esc>hi
+inoremap <leader>[ [
+inoremap < <> <esc>hi
+inoremap <leader>< <
+inoremap <leader>, <esc>f s
+"}
+
+nnoremap <leader>ll :set relativenumber!<cr>
+"Changes between relative line number, and absolute line number.  
+
+inoremap jj <esc>
+
+nnoremap cd cc<esc>
+"Replaces line with empty line.
+
+noremap ; :
+noremap : ;
+"This swaps the semi-colon, and colon.
+
+noremap Y y$
+"Makes Y work like D, and C. Yanks until the end of the line.
+
+nnoremap \ ,
+"This gives the backslash, the original mapleader, the functionality of the comma key.
+
+nnoremap <silent> <leader>/ :nohlsearch<cr>
+"Clears highlights of searches.
+
+"nnoremap <silent> <leader>ve :tabe ~/.vimrc<cr>
+"Gives functionality to both source the vimrc file, and edit it in a new tab.
+
+nnoremap j gj
+nnoremap k gk
+"This causes j and k to go up one line at a time more naturally.
+
+"nnoremap o o<esc>
+"nnoremap O O<esc>
+"o and O will add a line either above or below respectively without entering insert mode.
+
+nnoremap <leader>y "*y
+"This will copy whatever is selected into the clipboard register.
+
+nnoremap <leader>p "*p
+nnoremap <leader>P "*P
+"This will paste whatever is located in the clipboard register.

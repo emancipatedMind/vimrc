@@ -1,0 +1,293 @@
+let mapleader = ','
+set nocompatible
+behave mswin
+syntax on
+
+
+nnoremap <silent> <leader>vev :tabe ~/vimrc/_vimrc<cr> 
+nnoremap <silent> <leader>vss :so ~/vimrc/_vimrc<cr> 
+
+source ~/vimrc/_vimrc_common
+
+colorscheme darkblue
+
+inoremap <leader>{ {
+
+nnoremap <silent> [b :bprevious<cr>
+nnoremap <silent> ]b :bnext<cr>
+nnoremap <silent> [B :bfirst<cr>
+nnoremap <silent> ]B :blast<cr>
+"Shortcuts for traversing the buffer list.
+
+map <up> <nop>
+map <right> <nop>
+map <left> <nop>
+map <down> <nop>
+imap <up> <nop>
+imap <right> <nop>
+imap <left> <nop>
+imap <down> <nop>
+"removes functionality of arrow keys. Mainly for learning vim.
+
+"Abbreviation section
+
+inoreabbrev f function
+inoreabbrev fn function() {<cr>}O   <esc>a
+inoreabbrev fni function() {<cr>};O   <esc>a
+inoreabbrev ifi if() {<cr>};<esc>kf(a
+inoreabbrev ife if() {<cr>}<cr>else {<cr>};<esc>3kf(a
+inoreabbrev fj for ( var j = 0 ; j < ; j += 1) {<cr>};<esc>kf<li
+inoreabbrev fp for ($j = 0 ; $j < ; $j += 1)<esc>2F i
+"A couple of abbreviations to put common text when programming.
+
+"Functions
+
+"Places a closing bracket in the proper place after typing an opening bracket.
+"function! CurlyBraces()
+    "let l:curpos = getpos('.')
+    "let l:prevlinenum = curpos[1] - 1
+    "let l:prevline = getline(prevlinenum)
+    "let l:curcol = match(prevline,'\v[^ ]')
+    "if(curcol == -1)
+        "normal! a{} F}
+        "unlet l:curpos l:prevlinenum l:prevline l:curcol
+        "startinsert
+        "return 0
+    "endif
+    "let l:curline = getline('.')
+    "if(curline =~ '\v^\s*$')
+        "delete
+        "let l:split = strpart(prevline,0,curcol)
+        "if(curcol != 0)
+            "let l:lines = [l:split.'{']
+            "let l:lines = add(l:lines,l:split.'    ')
+            "let l:lines = add(l:lines,l:split."}")
+        "else
+            "let l:lines = ['{']
+            "let l:lines = add(l:lines,'    ')
+            "let l:lines = add(l:lines,'}')
+        "endif
+        "call append(prevlinenum,lines)
+        "let curpos[1] += 1
+        "let curpos[2] = curcol + 5
+        "call setpos('.',curpos)
+        "startinsert!
+        "unlet l:lines l:split
+    "else
+        "normal! a{} F}
+        "startinsert
+    "endif
+    "unlet l:curpos l:curline l:prevlinenum l:prevline l:curcol
+"endfunction
+
+inoremap { :call CurlyBraces()
+"Places a closing bracket in the proper place after typing an opening bracket.
+function! CurlyBraces()
+    let l:curline = getline('.')
+    if(l:curline =~ '\vif')
+        normal! A{}ko    
+        startinsert!
+    elseif(l:curline =~ '\vfunction|for|else|do|var')
+        normal! A{};ko    
+        startinsert!
+    else
+        normal! a{} F}
+        startinsert
+    endif
+endfunction
+
+inoremap <leader>ti <esc>:call NewTag('i')
+inoremap <leader>tn <esc>:call NewTag('n')
+function! NewTag(type)
+    let l:curpos = getpos('.')
+    let l:startpos = l:curpos
+    let l:curline = getline(curpos[1])
+    let l:curchar = char2nr(strpart(curline,curpos[2]-1,1))
+    if((l:curchar!=62)||(l:curchar!=0))
+        normal! f>
+        let l:curpos[2] = col('.')
+    endif
+    let l:pat = '\v\<@<=[[:alnum:]]+' "Pattern that matches beginning tag.
+    let l:numofmat = NumOfMatches(strpart(curline,0,curpos[2]),pat) "Returns number of beginning tags before cursor position.
+    let l:tag =  matchstr(curline,pat,0,numofmat) "Returns closes matching tag right before cursor.
+    let l:pat = '\v\<[^\/].{-}\>'
+    let l:newtag = '</' . l:tag . '>'
+    let curpos[2] = matchend(curline,pat,0,numofmat)
+    let l:newline = strpart(curline,0,curpos[2]) . l:newtag . strpart(curline,curpos[2])
+    call setline('.',newline)
+    let curpos[2] += 1
+    call setpos('.',curpos)
+    if(a:type=='n')
+        normal! 2ik
+    endif
+    unlet! l:curpos l:curline l:pat l:numofmat l:newtag l:curchar l:newline
+    startinsert
+endfunction
+
+nnoremap <silent> <leader>ft :call FormatText()
+"Indents blocks for easier reading, and if already indented, unindents all blocks.
+function! FormatText()
+    let l:pat = '\v\{\s*$'
+    let l:matchpos = searchpos(l:pat,'n')
+    if(l:matchpos!=[0,0])
+        let l:curpos = getpos('.')
+        if(char2nr(strpart(getline(l:matchpos[0] + 1),0,1))==32)
+            execute "g:" . pat . ":normal! f{Vi{<"
+        else
+            execute "g:" . pat . ":normal! f{Vi{>"
+        endif
+        call setpos('.', l:curpos)
+        echo "Tabbed format successful. Proceed."
+    else
+        echo "No sections to be tabbed found."
+    endif
+    unlet! l:curpos l:matchpos l:pat
+endfunction
+
+nnoremap <silent> <leader>lu :call CommentLine("u")
+"Yields {line} from <!--{line}-->, or /*{line}*/.
+nnoremap <silent> <leader>lc :call CommentLine("c")
+"Comments line. If html tag is found, takes this form <!--{line}-->, if not, takes this form, /* {line} */.
+function! CommentLine(operation)
+    let l:curline = getline('.')
+    if(curline =~ '\v^\s*$')
+        unlet l:curline
+        return 0
+    endif
+    if(a:operation == "u")
+        substitute:\v\<!--(.+)--\>:\1:e
+        substitute:\v/\*(.*)\*/:\1:e
+    elseif(a:operation == "c")
+        if(curline !~ '\v(/\*.+\*/$)|(\<!--[^(--)]+--\>)')
+            if(curline =~ '\v\<[^>]*\>')
+                normal! I<!--A-->
+            else
+                normal! I/*A*/
+            endif
+        endif
+    endif
+    unlet l:curline
+endfunction
+
+inoremap <silent> <leader>U <esc>:call UpperCaseWord()
+"Capitalizes a word.
+function! UpperCaseWord()
+    let l:curpos = getpos('.')
+    let curpos[2] += 1
+    normal! gUiw
+    call setpos('.',curpos)
+    unlet l:curpos
+    startinsert
+endfunction
+
+nnoremap <silent> <leader>bp <esc>:call BrowserPrefixes()
+"For CSS3. Prepends the necessary browser prefixes to line containing hyphens box-sizing, linear-gradient, radial gradient, transitions, or transforms.
+function! BrowserPrefixes()
+    let l:curline = getline('.')
+    let l:matchstart = match(curline,'\v[^-]\zs(linear|radial|trans|box-sizing|hyphens)')
+    if((matchstart)==-1)
+        echo "Eligible line for browser prefixes not found."
+        unlet l:curline l:matchstart
+        return 0
+    endif
+    let l:prefixes = ['-moz-','-ms-','-o-','-webkit-']
+    let l:curpos = getpos('.')
+    let l:begin = strpart(curline,0,matchstart)
+    let l:split = strpart(curline,matchstart)
+    echo split
+    let l:prefixedtextline = []
+    let l:newline = ''
+    for prefix in prefixes
+        let newline =  l:begin . l:prefix . l:split
+        let prefixedtextline = add(prefixedtextline, newline)
+    endfor
+    call append(curpos[1],prefixedtextline)
+    let curpos[1] += 4
+    call setpos('.',curpos)
+    unlet l:prefixes l:curpos l:curline l:matchstart l:begin l:split l:prefixedtextline l:newline
+endfunction
+
+"inoremap <silent>  :call IndentNewLine('down')
+"nnoremap <silent> o :call IndentNewLine('down')
+"nnoremap <silent> O :call IndentNewLine('up')
+"Changes functionality of enter key, and o key. Gives newline indentation of current line. Also allows enter key to be used anywhere on line
+"without separating line.
+function! IndentNewLine(operation)
+    let l:curpos = getpos('.')
+    if(a:operation=='up')
+        let l:curpos[1] -= 1
+    endif
+    let l:curline = getline(curpos[1])
+    let l:indent = match(curline,'\v[^ ]')
+    let l:newline = strpart(l:curline,0,l:indent) . ' '
+    call append((curpos[1]),newline)
+    let curpos = [0,(curpos[1]+1),(indent + 1),0]
+    call setpos('.',curpos)
+    unlet l:curpos l:curline l:indent l:newline
+    startinsert
+endfunction
+
+nnoremap <silent> <leader>R :call RemoveTrailingSpaces()
+"Removes white spaces from the end of lines.
+function! RemoveTrailingSpaces()
+    let l:curpos = getpos('.')
+    %substitute:\v\s+$::e
+    call setpos('.',curpos)
+    unlet l:curpos
+endfunction
+
+function! NumOfMatches(expr,pat)
+    let l:inputstring = a:expr
+    let l:searchstring = a:pat
+    if(match(inputstring,searchstring)==-1)
+        unlet l:inputstring l:searchstring
+        return 0
+    endif
+    let l:index = 0
+    let l:numofmatches = 0
+    while (match(inputstring,searchstring)>0)
+        let index = match(inputstring,searchstring)
+        let inputstring = strpart(inputstring,index)
+        let numofmatches += 1
+    endwhile
+    unlet l:inputstring l:searchstring l:index
+    return l:numofmatches
+endfunction
+
+augroup vimrcEx
+	au!
+	autocmd FileType text setlocal textwidth=78
+  autocmd BufReadPost *
+    \ if line("'\"") > 1 && line("'\"") <= line("$") |
+    \   exe "normal! g`\"" |
+    \ endif
+augroup END
+
+if !exists(":DiffOrig")
+  command DiffOrig vert new | set bt=nofile | r ++edit # | 0d_ | diffthis
+		  \ | wincmd p | diffthis
+endif
+
+function! MyDiff()
+  let opt = '-a --binary '
+  if &diffopt =~ 'icase' | let opt = opt . '-i ' | endif
+  if &diffopt =~ 'iwhite' | let opt = opt . '-b ' | endif
+  let arg1 = v:fname_in
+  if arg1 =~ ' ' | let arg1 = '"' . arg1 . '"' | endif
+  let arg2 = v:fname_new
+  if arg2 =~ ' ' | let arg2 = '"' . arg2 . '"' | endif
+  let arg3 = v:fname_out
+  if arg3 =~ ' ' | let arg3 = '"' . arg3 . '"' | endif
+  let eq = ''
+  if $VIMRUNTIME =~ ' '
+    if &sh =~ '\<cmd'
+      let cmd = '""' . $VIMRUNTIME . '\diff"'
+      let eq = '"'
+    else
+      let cmd = substitute($VIMRUNTIME, ' ', '" ', '') . '\diff"'
+    endif
+  else
+    let cmd = $VIMRUNTIME . '\diff'
+  endif
+  silent execute '!' . cmd . ' ' . opt . arg1 . ' ' . arg2 . ' > ' . arg3 . eq
+endfunction
