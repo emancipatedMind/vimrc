@@ -40,3 +40,7 @@ inoreabbrev ife if() {<cr>}<cr>else {<cr>};<esc>3kf(a
 inoreabbrev fj for ( var j = 0 ; j < ; j += 1) {<cr>};<esc>kf<li
 inoreabbrev fp for ($j = 0 ; $j < ; $j += 1)<esc>2F i
 "A couple of abbreviations to put common text when programming.
+
+inoremap < <> <esc>hi
+inoremap <leader>< <
+"An added mapping for automatically entering a closing character.

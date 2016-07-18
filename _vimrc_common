@@ -22,8 +22,6 @@ inoremap " "" <esc>hi
 inoremap <leader>" "
 inoremap [ [] <esc>hi
 inoremap <leader>[ [
-inoremap < <> <esc>hi
-inoremap <leader>< <
 inoremap <leader>, <esc>f s
 "}
 
